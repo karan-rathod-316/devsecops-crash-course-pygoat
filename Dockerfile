@@ -1,36 +1,28 @@
+# Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# set work directory
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set work directory
 WORKDIR /app
 
-
-# dependencies for psycopg2
+# Install system dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    dnsutils \
+    build-essential \
     libpq-dev \
-    python3-dev \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    gcc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-
-# Install dependencies
-RUN python -m pip install --no-cache-dir pip==22.0.4
+# Install Python dependencies
 COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Copy project
+COPY . .
 
-# copy project
-COPY . /app/
-
-
-# install pygoat
-EXPOSE 8000
-
-
-RUN python3 /app/manage.py migrate
-WORKDIR /app/pygoat/
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers","6", "pygoat.wsgi"]
+# Run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "your_project_name.wsgi:application"]
